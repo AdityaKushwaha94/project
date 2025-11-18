@@ -2,6 +2,7 @@ export type User = {
   _id: string;
   email: string;
   name: string;
+  picture?: string;
   addressLine1: string;
   city: string;
   country: string;
@@ -30,9 +31,19 @@ export type Restaurant = {
 export type OrderStatus =
   | "placed"
   | "paid"
-  | "inProgress"
+  | "confirmed"
+  | "preparing"
   | "outForDelivery"
-  | "delivered";
+  | "delivered"
+  | "cancelled";
+
+export type OrderTracking = {
+  placedAt: string;
+  confirmedAt?: string;
+  preparingAt?: string;
+  outForDeliveryAt?: string;
+  deliveredAt?: string;
+};
 
 export type Order = {
   _id: string;
@@ -42,6 +53,7 @@ export type Order = {
     menuItemId: string;
     name: string;
     quantity: string;
+    price: number;
   }[];
   deliveryDetails: {
     name: string;
@@ -51,8 +63,14 @@ export type Order = {
   };
   totalAmount: number;
   status: OrderStatus;
+  estimatedDeliveryTime: number;
+  remainingDeliveryTime?: number;
+  estimatedDeliveryDateTime?: string;
+  orderTime: string;
+  tracking: OrderTracking;
   createdAt: string;
-  restaurantId: string;
+  updatedAt: string;
+  paymentIntentId?: string;
 };
 
 export type RestaurantSearchResponse = {

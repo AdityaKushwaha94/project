@@ -14,14 +14,30 @@ const orderSchema = new mongoose.Schema({
       menuItemId: { type: String, required: true },
       quantity: { type: Number, required: true },
       name: { type: String, required: true },
+      price: { type: Number, required: true },
     },
   ],
   totalAmount: Number,
   status: {
     type: String,
-    enum: ["placed", "paid", "inProgress", "outForDelivery", "delivered"],
+    enum: ["placed", "paid", "confirmed", "preparing", "outForDelivery", "delivered", "cancelled"],
+    default: "placed"
   },
-  createdAt: { type: Date, default: Date.now },
+  estimatedDeliveryTime: { type: Number, default: 30 }, // in minutes
+  actualDeliveryTime: { type: Number }, // in minutes
+  orderTime: { type: Date, default: Date.now },
+  estimatedDeliveryDateTime: { type: Date },
+  actualDeliveryDateTime: { type: Date },
+  paymentIntentId: { type: String },
+  tracking: {
+    placedAt: { type: Date, default: Date.now },
+    confirmedAt: { type: Date },
+    preparingAt: { type: Date },
+    outForDeliveryAt: { type: Date },
+    deliveredAt: { type: Date }
+  }
+}, {
+  timestamps: true
 });
 
 const Order = mongoose.model("Order", orderSchema);

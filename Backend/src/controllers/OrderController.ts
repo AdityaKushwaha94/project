@@ -11,9 +11,58 @@ const getMyOrders = async (req: Request, res: Response) => {
   try {
     const orders = await Order.find({ user: req.userId })
       .populate("restaurant")
+      .populate("user")
+      .sort({ createdAt: -1 }); // Most recent first
+
+    // Calculate remaining delivery time for active orders
+    const ordersWithTimer = orders.map(order => {
+      const orderObj = order.toObject();
+      
+      if (order.status !== 'delivered' && order.status !== 'cancelled') {
+        const orderTime = new Date(order.orderTime);
+        const estimatedDeliveryTime = new Date(orderTime.getTime() + order.estimatedDeliveryTime * 60000);
+        const now = new Date();
+        const remainingMinutes = Math.max(0, Math.floor((estimatedDeliveryTime.getTime() - now.getTime()) / 60000));
+        
+        (orderObj as any).remainingDeliveryTime = remainingMinutes;
+        (orderObj as any).estimatedDeliveryDateTime = estimatedDeliveryTime;
+      }
+      
+      return orderObj;
+    });
+
+    res.json(ordersWithTimer);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "something went wrong" });
+  }
+};
+
+const getOrderById = async (req: Request, res: Response) => {
+  try {
+    const { orderId } = req.params;
+    const order = await Order.findOne({ _id: orderId, user: req.userId })
+      .populate("restaurant")
       .populate("user");
 
-    res.json(orders);
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    const orderObj = order.toObject();
+    
+    // Calculate remaining delivery time for active orders
+    if (order.status !== 'delivered' && order.status !== 'cancelled') {
+      const orderTime = new Date(order.orderTime);
+      const estimatedDeliveryTime = new Date(orderTime.getTime() + order.estimatedDeliveryTime * 60000);
+      const now = new Date();
+      const remainingMinutes = Math.max(0, Math.floor((estimatedDeliveryTime.getTime() - now.getTime()) / 60000));
+      
+      (orderObj as any).remainingDeliveryTime = remainingMinutes;
+      (orderObj as any).estimatedDeliveryDateTime = estimatedDeliveryTime;
+    }
+
+    res.json(orderObj);
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "something went wrong" });
@@ -59,7 +108,8 @@ const stripeWebhookHandler = async (req: Request, res: Response) => {
 
     order.totalAmount = event.data.object.amount_total;
     order.status = "paid";
-
+    order.paymentIntentId = event.data.object.payment_intent as string;
+    
     await order.save();
   }
 
@@ -78,13 +128,26 @@ const createCheckoutSession = async (req: Request, res: Response) => {
       throw new Error("Restaurant not found");
     }
 
+    // Calculate estimated delivery time
+    const orderTime = new Date();
+    const estimatedDeliveryTime = restaurant.estimatedDeliveryTime;
+    const estimatedDeliveryDateTime = new Date(orderTime.getTime() + estimatedDeliveryTime * 60000);
+
     const newOrder = new Order({
       restaurant: restaurant,
       user: req.userId,
       status: "placed",
       deliveryDetails: checkoutSessionRequest.deliveryDetails,
-      cartItems: checkoutSessionRequest.cartItems,
-      createdAt: new Date(),
+      cartItems: checkoutSessionRequest.cartItems.map(item => ({
+        ...item,
+        price: restaurant.menuItems.find(mi => mi._id.toString() === item.menuItemId)?.price || 0
+      })),
+      orderTime: orderTime,
+      estimatedDeliveryTime: estimatedDeliveryTime,
+      estimatedDeliveryDateTime: estimatedDeliveryDateTime,
+      tracking: {
+        placedAt: orderTime
+      }
     });
 
     const lineItems = createLineItems(
@@ -107,7 +170,7 @@ const createCheckoutSession = async (req: Request, res: Response) => {
     res.json({ url: session.url });
   } catch (error: any) {
     console.log(error);
-    res.status(500).json({ message: error.raw.message });
+    res.status(500).json({ message: error.raw?.message || error.message });
   }
 };
 
@@ -175,6 +238,7 @@ const createSession = async (
 
 export default {
   getMyOrders,
+  getOrderById,
   createCheckoutSession,
   stripeWebhookHandler,
 };

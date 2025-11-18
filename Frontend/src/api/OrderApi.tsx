@@ -35,6 +35,37 @@ export const useGetMyOrders = () => {
   return { orders, isLoading };
 };
 
+export const useGetOrderById = (orderId?: string) => {
+  const { getAccessTokenSilently } = useAuth0();
+
+  const getOrderByIdRequest = async (): Promise<Order> => {
+    const accessToken = await getAccessTokenSilently();
+
+    const response = await fetch(`${API_BASE_URL}/api/order/${orderId}`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to get order");
+    }
+
+    return response.json();
+  };
+
+  const { data: order, isLoading, refetch } = useQuery(
+    ["fetchOrder", orderId],
+    getOrderByIdRequest,
+    {
+      enabled: !!orderId,
+      refetchInterval: 5000,
+    }
+  );
+
+  return { order, isLoading, refetch };
+};
+
 type CheckoutSessionRequest = {
   cartItems: {
     menuItemId: string;
