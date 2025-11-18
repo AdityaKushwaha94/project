@@ -12,13 +12,25 @@ const AuthCallbackPage = () => {
 
   useEffect(() => {
     if (user?.sub && user?.email && !hasCreatedUser.current) {
-      createUser({ auth0Id: user.sub, email: user.email });
+      createUser({ 
+        auth0Id: user.sub, 
+        email: user.email,
+        name: user.name || user.email?.split('@')[0],
+        picture: user.picture
+      });
       hasCreatedUser.current = true;
     }
     navigate("/");
   }, [createUser, navigate, user]);
 
-  return <>Loading...</>;
+  return (
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+        <p className="text-gray-600">Setting up your account...</p>
+      </div>
+    </div>
+  );
 };
 
 export default AuthCallbackPage;

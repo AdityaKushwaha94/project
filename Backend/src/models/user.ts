@@ -12,6 +12,9 @@ const userSchema = new mongoose.Schema({
   name: {
     type: String,
   },
+  picture: {
+    type: String,
+  },
   addressLine1: {
     type: String,
   },
@@ -21,6 +24,8 @@ const userSchema = new mongoose.Schema({
   country: {
     type: String,
   },
+}, {
+  timestamps: true
 });
 
 const User = mongoose.model("User", userSchema);

@@ -17,16 +17,29 @@ const getCurrentUser = async (req: Request, res: Response) => {
 
 const createCurrentUser = async (req: Request, res: Response) => {
   try {
-    const { auth0Id } = req.body;
-    const existingUser = await User.findOne({ auth0Id });
+    const { auth0Id, email, name, picture } = req.body;
+    
+    let existingUser = await User.findOne({ auth0Id });
 
     if (existingUser) {
-      return res.status(200).send();
+      // Update user info if it's changed
+      existingUser.email = email || existingUser.email;
+      existingUser.name = name || existingUser.name;
+      existingUser.picture = picture || existingUser.picture;
+      await existingUser.save();
+      return res.status(200).json(existingUser.toObject());
     }
 
-    const newUser = new User(req.body);
+    // Create new user with Google auth details
+    const newUser = new User({
+      auth0Id,
+      email,
+      name: name || email?.split('@')[0], // Use email prefix as fallback name
+      picture,
+      ...req.body
+    });
+    
     await newUser.save();
-
     res.status(201).json(newUser.toObject());
   } catch (error) {
     console.log(error);

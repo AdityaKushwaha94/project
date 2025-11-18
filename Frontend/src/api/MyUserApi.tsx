@@ -42,6 +42,8 @@ export const useGetMyUser = () => {
 type CreateUserRequest = {
   auth0Id: string;
   email: string;
+  name?: string;
+  picture?: string;
 };
 
 export const useCreateMyUser = () => {
@@ -61,6 +63,8 @@ export const useCreateMyUser = () => {
     if (!response.ok) {
       throw new Error("Failed to create user");
     }
+    
+    return response.json();
   };
 
   const {
