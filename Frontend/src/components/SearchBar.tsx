@@ -2,14 +2,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Form, FormControl, FormField, FormItem } from "./ui/form";
-import { Search } from "lucide-react";
+import { MapPin, Search } from "lucide-react";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { useEffect } from "react";
 
 const formSchema = z.object({
   searchQuery: z.string({
-    required_error: "Restaurant name is required",
+    required_error: "Location is required",
   }),
 });
 
@@ -48,42 +48,52 @@ const SearchBar = ({ onSubmit, onReset, placeHolder, searchQuery }: Props) => {
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className={`flex items-center gap-3 justify-between flex-row border-2 rounded-full p-3 ${
-          form.formState.errors.searchQuery && "border-red-500"
+        className={`group flex items-center gap-2 bg-white rounded-2xl p-2 shadow-lg hover:shadow-xl transition-all duration-300 border-2 ${
+          form.formState.errors.searchQuery 
+            ? "border-red-300 shadow-red-100" 
+            : "border-green-100 hover:border-green-200 focus-within:border-green-300"
         }`}
       >
-        <Search
-          strokeWidth={2.5}
-          size={30}
-          className="ml-1 text-orange-500 hidden md:block"
-        />
-        <FormField
-          control={form.control}
-          name="searchQuery"
-          render={({ field }) => (
-            <FormItem className="flex-1">
-              <FormControl>
-                <Input
-                  {...field}
-                  className="border-none shadow-none text-xl focus-visible:ring-0"
-                  placeholder={placeHolder}
-                />
-              </FormControl>
-            </FormItem>
-          )}
-        />
+        <div className="flex items-center gap-3 flex-1 px-4 py-3">
+          <MapPin className="h-5 w-5 text-green-500" />
+          <FormField
+            control={form.control}
+            name="searchQuery"
+            render={({ field }) => (
+              <FormItem className="flex-1">
+                <FormControl>
+                  <Input
+                    {...field}
+                    className="border-none shadow-none text-base placeholder:text-gray-400 focus-visible:ring-0 bg-transparent p-0"
+                    placeholder={placeHolder}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+        </div>
 
-        <Button
-          onClick={handleReset}
-          type="button"
-          variant="outline"
-          className="rounded-full"
-        >
-          Reset
-        </Button>
-        <Button type="submit" className="rounded-full bg-orange-500">
-          Search
-        </Button>
+        <div className="flex items-center gap-2">
+          {searchQuery && (
+            <Button
+              onClick={handleReset}
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-xl px-4"
+            >
+              Clear
+            </Button>
+          )}
+          
+          <Button 
+            type="submit" 
+            className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 flex items-center gap-2"
+          >
+            <Search className="h-4 w-4" />
+            Search
+          </Button>
+        </div>
       </form>
     </Form>
   );
